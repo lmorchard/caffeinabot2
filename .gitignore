@@ -1,0 +1,19 @@
+# File types to ignore globally
+*.DS_Store
+*.log
+*.sw?
+*.cache
+
+# Directories to ignore
+build/
+dist/
+tmp/
+xfers/
+frontend/build/
+logs/
+data/
+node_modules/
+frontend/web_modules/
+
+config/local.*
+.env
