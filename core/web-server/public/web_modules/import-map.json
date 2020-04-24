@@ -1,0 +1,10 @@
+{
+  "imports": {
+    "htm": "./htm.js",
+    "pino": "./pino.js",
+    "preact": "./preact.js",
+    "twitch-js": "./twitch-js.js",
+    "uuid": "./uuid.js",
+    "ws": "./ws.js"
+  }
+}

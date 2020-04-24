@@ -1,6 +1,11 @@
 import TwitchJs from '/web_modules/twitch-js.js';
+import Pino from '/web_modules/pino.js';
 
-console.log("TwitchJS", TwitchJs);
+const log = Pino();
+
+log.info('Starting up!');
+
+console.log('TwitchJS', TwitchJs);
 
 const messages = document.querySelector('#messages');
 const wsButton = document.querySelector('#wsButton');

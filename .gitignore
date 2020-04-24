@@ -13,7 +13,7 @@ frontend/build/
 logs/
 data/
 node_modules/
-frontend/web_modules/
+core/web-frontend/public/web_modules/
 
 config/local.*
 .env
