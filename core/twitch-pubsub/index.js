@@ -164,7 +164,7 @@ async function refreshAccessToken(context) {
     client_id: clientId,
     client_secret: clientSecret,
   });
-  log.debug({ msg: 'refreshParams', refreshParams: refreshParams.toString() });
+  log.trace({ msg: 'refreshParams', refreshParams: refreshParams.toString() });
   const refreshResp = await fetch(`https://id.twitch.tv/oauth2/token`, {
     method: 'POST',
     headers: {

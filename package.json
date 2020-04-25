@@ -29,7 +29,11 @@
     "preact": "^10.4.1",
     "reload": "^3.0.4",
     "tmi.js": "^1.5.0",
+    "twitch": "^4.0.9",
+    "twitch-chat-client": "^4.0.9",
     "twitch-js": "^2.0.0-beta.33",
+    "twitch-pubsub-client": "^4.0.9",
+    "twitch-webhooks": "^4.0.9",
     "uuid": "^7.0.3",
     "watch": "^1.0.2",
     "ws": "^7.2.3"
