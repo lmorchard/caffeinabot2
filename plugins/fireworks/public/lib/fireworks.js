@@ -20,8 +20,8 @@
   var canvas = document.getElementById("canvas"),
     ctx = canvas.getContext("2d"),
     // full screen dimensions
-    cw = window.innerWidth,
-    ch = window.innerHeight,
+    cw = canvas.parentElement.offsetWidth,
+    ch = canvas.parentElement.offsetHeight,
     // firework collection
     fireworks = [],
     // particle collection
@@ -226,6 +226,11 @@
 
   // main demo loop
   function loop() {
+    cw = canvas.parentElement.offsetWidth;
+    ch = canvas.parentElement.offsetHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+    
     // this function will run endlessly with requestAnimationFrame
     requestAnimFrame(loop);
 

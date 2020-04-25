@@ -37,8 +37,9 @@ function connectSocket() {
   socket.addEventListener("message", event => {
     try {
       const data = JSON.parse(event.data);
-      const name = data.event in socketEventHandlers ? data.event : "default";
-      socketEventHandlers[name](data, event);
+      if (data.event in socketEventHandlers) {
+        socketEventHandlers[data.event](data, event);
+      }
     } catch (err) {
       console.log("socket message error", err, event);
     }
@@ -56,11 +57,6 @@ const socketEventHandlers = {
       const delay = parseInt(spread * Math.random());
       fireworks.randomLaunch(delay);
     }
-  },
-
-  ping: ({ systemTime }) => {
-    const messageEl = document.querySelector("#systemTime");
-    messageEl.innerText = `System Time: ${new Date(systemTime).toISOString()}`;
   },
 };
 
