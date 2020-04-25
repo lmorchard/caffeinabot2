@@ -24,6 +24,47 @@ module.exports = async (context) => {
 
   await connectSocket();
 
+  const send = (data) => {
+    log.trace({ msg: 'send', data });
+    ws.send(JSON.stringify(data));
+  };
+
+  function handleTopicMessage(socketMessage) {
+    const { topic, message } = socketMessage.data;
+    const [topicName, topicChannelId] = topic.split('.');
+
+    switch (topicName) {
+      case 'following': {
+        const { display_name, username, user_id } = JSON.parse(message);
+        log.debug({ msg: 'following', display_name, username, user_id });
+        events.emit('twitch:pubsub:following', {
+          display_name,
+          username,
+          user_id,
+        });
+        break;
+      }
+      /*
+      case 'channel-points-channel-v1': {
+        break;
+      }
+      */
+      default: {
+        const messageParsed = JSON.parse(message);
+        const { type, data, data_object } = messageParsed;
+        log.debug({
+          msg: 'MESSAGE',
+          topicName,
+          messageParsed,
+          type,
+          data_object,
+          data,
+          raw: socketMessage.data,
+        });
+      }
+    }
+  }
+
   async function connectSocket() {
     let reconnectTimer = null;
     let pingTimer = null;
@@ -41,12 +82,8 @@ module.exports = async (context) => {
     } else {
       log.info({ msg: 'connecting' });
     }
-    ws = new WebSocket(PUBSUB_URL);
 
-    const send = (data) => {
-      log.trace({ msg: 'send', data });
-      ws.send(JSON.stringify(data));
-    };
+    ws = new WebSocket(PUBSUB_URL);
 
     ws.on('open', function open() {
       send({
@@ -104,19 +141,7 @@ module.exports = async (context) => {
             break;
           }
           case 'MESSAGE': {
-            const { topic, message } = socketMessage.data;
-            const [ topicName, topicChannelId ] = topic.split('.');
-            const messageParsed = JSON.parse(message);
-            const { type, data, data_object } = messageParsed;
-            log.debug({
-              msg: 'MESSAGE',
-              topicName,
-              messageParsed,
-              type,
-              data_object,
-              data,
-              raw: socketMessage.data,
-            });
+            handleTopicMessage(socketMessage);
             break;
           }
           default: {
