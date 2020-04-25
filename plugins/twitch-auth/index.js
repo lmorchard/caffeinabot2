@@ -4,7 +4,14 @@ const { html } = require('../../lib/html');
 
 const SCOPES = [
   'bits:read',
+  'channel_read',
+  'channel_editor',
+  'channel_check_subscription',
+  'channel_commercial',
+  'channel_subscriptions',
+  'channel:moderate',
   'channel:read:subscriptions',
+  'channel:read:redemptions',
   'clips:edit',
   'user:edit',
   'user:edit:broadcast',
