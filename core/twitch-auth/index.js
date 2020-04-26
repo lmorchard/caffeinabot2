@@ -1,6 +1,10 @@
+const fs = require('fs');
 const express = require('express');
 const fetch = require('node-fetch');
 const { html } = require('../../lib/html');
+const { updateTwitchCredentials } = require('../../lib/twitch');
+
+const TWITCH_AUTH_FN = `${__dirname}/../../data/twitchAuth.json`;
 
 const SCOPES = [
   'bits:read',
@@ -17,6 +21,7 @@ const SCOPES = [
   'user:edit:broadcast',
   'user:read:email',
   'channel:moderate',
+  'moderation:read',
   'chat:edit',
   'chat:read',
   'whispers:read',
@@ -55,6 +60,8 @@ module.exports = async (context) => {
             res.send(errorHtml(await tokenResp.text()));
           } else {
             const tokenData = await tokenResp.json();
+            await updateTwitchCredentials(context, tokenData);
+
             return res.send(
               html({
                 body: `
@@ -64,10 +71,6 @@ module.exports = async (context) => {
                     .map(([name, value]) => `<dt>${name}</dt><dd>${value}</dd>`)
                     .join('\n')}
                 </dl>
-                <textarea style="width: 100%; height: 5em">
-                  TWITCH_REFRESH_TOKEN=${tokenData.refresh_token}
-                  TWITCH_ACCESS_TOKEN=${tokenData.access_token}
-                </textarea>
                 <p><a href="${authorizeUrl()}">Authorize again</a></p>
                 `,
               })

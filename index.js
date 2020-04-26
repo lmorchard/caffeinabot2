@@ -14,10 +14,11 @@ async function init() {
     },
     [
       'core/web-server',
+      'core/twitch-auth',
       'core/twitch-chatbot',
       'core/twitch-pubsub',
+      // 'core/twitch-webhooks',
       'core/obs-remote',
-      'plugins/twitch-auth',
       'plugins/edison-carter-overlay',
       'plugins/stream-loader',
       'plugins/youtube-playlist-shuffle',

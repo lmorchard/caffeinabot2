@@ -1,6 +1,6 @@
 const WebSocket = require('ws');
 const uuid = require('uuid');
-
+ 
 const SVC_OBS_REMOTE_SEND = 'obs:remote:send';
 const EV_OBS_REMOTE_MESSAGE = 'obs:remote:message';
 const EV_OBS_REMOTE_HEARTBEAT = 'obs:remote:heartbeat';
@@ -79,8 +79,7 @@ module.exports = async (context) => {
       const data = JSON.parse(raw);
       if (data['message-id'] && data['message-id'] in pendingRequests) {
         const [resolve] = pendingRequests[data['message-id']];
-        resolve(data);
-        return;
+        return resolve(data);
       }
       switch (data['update-type']) {
         case 'Heartbeat': {
