@@ -1,14 +1,16 @@
 const express = require('express');
 const http = require('http');
 const uuid = require('uuid');
+const watch = require('watch');
 const WebSocket = require('ws');
 const reload = require('reload');
-
-const { webFrontendServe } = require('../../lib/plugins');
+const { html } = require('../../lib/html');
 
 module.exports = async (context) => {
   const { config, log, events, services } = context;
   const { host, port } = config.web;
+
+  const homeLinks = {};
 
   const app = express();
 
@@ -68,25 +70,51 @@ module.exports = async (context) => {
 
   const reloadReturned = await reload(app);
 
-  const contextOut = {
-    app,
-    server,
-    websocketServer,
-    reloadReturned,
-  };
-
-  await webFrontendServe(
-    {
-      ...context,
-      ...contextOut,
-    },
-    '/',
-    `${__dirname}/public`
+  services.provide(
+    'web:server:serveStatic',
+    ({ urlpath, filepath, addToIndex = true, metadata = {} }) => {
+      log.trace({ msg: `serveStatic`, urlpath, filepath });
+      app.use(urlpath, express.static(filepath));
+      watch.watchTree(filepath, { interval: 1.0 }, (f, curr, prev) => {
+        reloadReturned.reload();
+      });
+      if (addToIndex) {
+        homeLinks[urlpath] = {
+          title: metadata.title || urlpath,
+          urlpath,
+        };
+      }
+    }
   );
 
   server.listen(port, host, () =>
     log.info(`listening at http://${host}:${port}`)
   );
 
-  return contextOut;
+  app.get('/', async (req, res) => {
+    res.send(html({
+      body: `
+        <h1>Contents</h1>
+        <ul>
+          ${Object.entries(homeLinks).map(([ urlpath, { title } ]) => `
+            <li><a href="${urlpath}">${title}</a></li>
+          `).join('\n')}
+        </ul>
+        <script src="/reload/reload.js"></script>    
+      `
+    }));
+  });
+
+  await services.call('web:server:serveStatic', {
+    urlpath: '/',
+    filepath: `${__dirname}/public`,
+    addToIndex: false,
+  });
+
+  return {
+    app,
+    server,
+    websocketServer,
+    reloadReturned,
+  };
 };

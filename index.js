@@ -18,7 +18,7 @@ async function init() {
       'core/twitch-chatbot',
       'core/twitch-pubsub',
       // 'core/twitch-webhooks',
-      'core/obs-remote',
+      'core/obs-websocket',
       'plugins/edison-carter-overlay',
       'plugins/stream-loader',
       'plugins/youtube-playlist-shuffle',
