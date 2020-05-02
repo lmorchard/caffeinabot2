@@ -1,10 +1,33 @@
-const { createTwitchClient } = require('../../lib/twitch');
+const PubSubClient = require('../../../twitch/packages/twitch-pubsub-client').default;
+const { createTwitchUserClient } = require('../../lib/twitch');
+// const PubSubClient = require('twitch-pubsub-client').default;
 
 const uuid = require('uuid');
 const fetch = require('node-fetch');
 const WebSocket = require('ws');
 
 module.exports = async (context) => {
+  const { config, events, log, services } = context;
+  const username = 'lmorchard';
+
+  const twitchClient = await createTwitchUserClient(context);
+
+  const userinfo = await twitchClient.helix.users.getUserByName(username);
+  const { id: userId } = userinfo;
+
+  const pubSubClient = new PubSubClient();
+  await pubSubClient.registerUserListener(twitchClient, userId);
+
+  await pubSubClient.onRedemption(userId, message => {
+    log.debug({ msg: 'redemption', message });
+  });
+
+  await pubSubClient.onFollowing(userId, message => {
+    log.debug({ msg: 'following', message });
+  });
+};
+
+module.exports.old = async (context) => {
   const { config, events, log, services } = context;
 
   const PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
@@ -34,6 +57,7 @@ module.exports = async (context) => {
   function handleTopicMessage(socketMessage) {
     const { topic, message } = socketMessage.data;
     const [topicName, topicChannelId] = topic.split('.');
+    log.debug({ msg: 'MESSAGE', topicName, message });
 
     switch (topicName) {
       case 'following': {

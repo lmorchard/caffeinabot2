@@ -1,37 +1,73 @@
-const { createTwitchClient } = require('../../lib/twitch');
+const {
+  createTwitchUserClient,
+  createTwitchAppClient,
+} = require('../../lib/twitch');
 const WebHookListener = require('twitch-webhooks').default;
 
 const EV_TWITCH_WEBHOOKS_PREFIX = 'twitch:webhooks:';
 
 module.exports = async (context) => {
   const { config, events, log, services } = context;
-  const { host } = config.twitch.webhooks;
+  const {
+    host: hostName,
+    port,
+    hookValidity,
+    reverseProxy: {
+      pathPrefix: webhooksProxyPathPrefix = '/',
+      port: webhooksProxyPort = 443,
+      ssl: webhooksProxySsl = true,
+    },
+  } = config.twitch.webhooks;
 
-  const twitchClient = await createTwitchClient(context);
-  const { userId } = await twitchClient.getTokenInfo();
-  const listener = await WebHookListener.create(twitchClient, {
-    hostName: host,
-    port: 8090,
-    reverseProxy: { port: 443, ssl: true },
+  const twitchUserClient = await createTwitchUserClient(context);
+  const { userId } = await twitchUserClient.getTokenInfo();
+
+  const twitchAppClient = await createTwitchAppClient(context);
+  const hooksResult = await twitchAppClient.helix.webHooks.getSubscriptions();
+  const hooks = await hooksResult.getAll();
+  for (const hook of hooks) {
+    log.debug({ msg: 'existing subscription', ...hook._data });
+  }
+
+  const listener = await WebHookListener.create(twitchAppClient, {
+    hostName,
+    port,
+    hookValidity,
+    reverseProxy: {
+      pathPrefix: webhooksProxyPathPrefix,
+      port: webhooksProxyPort,
+      ssl: webhooksProxySsl,
+    },
   });
   listener.listen();
 
-  const evName = name => `${EV_TWITCH_WEBHOOKS_PREFIX}${name}`;
-
-  const reEmit = name => event => {
-    log.debug('reEmit', {name, event});
-    events.emit(evName(name), event);
-  }
-
-  listener.subscribeToModeratorEvents(userId, reEmit('moderatorEvents'));
-  listener.subscribeToStreamChanges(userId, reEmit('streamChanges'));
-  listener.subscribeToBanEvents(userId, reEmit('banEvents'));
-  listener.subscribeToFollowsToUser(userId, reEmit('followsTo'));
-  listener.subscribeToFollowsFromUser(userId, reEmit('followsFrom'));
-  listener.subscribeToSubscriptionEvents(userId, reEmit('subscriptionEvents'));
-  listener.subscribeToUserChanges(userId, reEmit('userChanges'));
-
-  events.on('twitch:webhooks:followsTo', event => {
-    log.debug('followsTo', event);
-  })
+  const followHandler = async (message) => {
+    log.debug({
+      msg: 'followplz',
+      data: message,
+    });
+    try {
+      const {
+        id,
+        name,
+        displayName,
+        description,
+        type,
+        profilePictureUrl,
+      } = await message.getUser();
+      log.debug({
+        msg: 'followplz2',
+        date: message.followDate,
+        id,
+        name,
+        displayName,
+        description,
+        type,
+        profilePictureUrl,
+      });
+    } catch (err) {
+      log.error({ msg: 'failed?', err });
+    }
+  };
+  listener.subscribeToFollowsToUser(userId, followHandler);
 };
