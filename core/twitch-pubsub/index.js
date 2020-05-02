@@ -23,7 +23,7 @@ module.exports = async (context) => {
   });
 
   await pubSubClient.onFollowing(userId, message => {
-    log.debug({ msg: 'following', message });
+    log.debug({ msg: 'following', ...message._data });
   });
 };
 

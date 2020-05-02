@@ -12,7 +12,7 @@ module.exports = async (context) => {
         `@${tags.username}, let there be light`
       );
       services.call('web:socket:broadcast', {
-        event: 'fireworks',
+        type: 'fireworks',
         number,
         spread,
       });

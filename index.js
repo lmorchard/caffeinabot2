@@ -1,6 +1,6 @@
 const config = require('./lib/config');
 const log = require('pino')(config.log);
-const { createNanoEvents } = require('nanoevents');
+const { createNanoEvents } = require('./lib/events');
 const { createServiceHub } = require('./lib/services');
 const { initPluginModules } = require('./lib/plugins');
 
@@ -23,6 +23,7 @@ async function init() {
     'plugins/stream-loader',
     'plugins/youtube-playlist-shuffle',
     'plugins/fireworks',
+    'plugins/alerts-overlay',
     // 'plugins/debug',
   ]);
 }

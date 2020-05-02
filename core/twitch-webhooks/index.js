@@ -42,10 +42,6 @@ module.exports = async (context) => {
   listener.listen();
 
   const followHandler = async (message) => {
-    log.debug({
-      msg: 'followplz',
-      data: message,
-    });
     try {
       const {
         id,

@@ -18,20 +18,21 @@ module.exports = async (context) => {
 
   const homeLinks = {};
   app.get('/', async (req, res) => {
-    res.send(
+    return res.send(
       htmlPage(
         html`
-        <h1>Index</h1>
-        <ul>
-          ${Object.entries(homeLinks)
-            .map(
-              ([urlpath, { title }]) => `
-            <li><a href="${urlpath}">${title}</a></li>
-          `
-            )
-            .join('\n')}
-        </ul>
-      `)
+          <h1>Index</h1>
+          <ul>
+            ${Object.entries(homeLinks)
+              .map(
+                ([urlpath, { title }]) => html`
+                  <li><a href="${urlpath}">${title}</a></li>
+                `
+              )
+              .join('\n')}
+          </ul>
+        `
+      )
     );
   });
 
@@ -45,18 +46,24 @@ module.exports = async (context) => {
     });
   });
 
-  websocketServer.on('connection', (ws, request) => {
-    ws.id = uuid.v4();
-    log.info({ msg: `WebSocket connection`, id: ws.id });
+  websocketServer.on('connection', (client, request) => {
+    client.id = uuid.v4();
+    log.info({ msg: `WebSocket connection`, id: client.id });9 
 
-    ws.on('message', (message) => {
-      log.trace({ msg: 'received', id: ws.id, message });
-      events.emit('web:socket:received', { id: ws.id, message });
+    const send = (message) => client.send(JSON.stringify(message));
+
+    client.on('message', (data) => {
+      const message = JSON.parse(data);
+      log.trace({ msg: 'received', id: client.id, message });
+      if (message.type === 'PING') {
+        send({ type: 'PONG' });
+      }
+      events.emit('web:socket:received', { id: client.id, message });
     });
 
-    ws.on('close', () => {
-      log.trace({ msg: 'closed', id: ws.id });
-      events.emit('web:socket:closed', { id: ws.id });
+    client.on('close', () => {
+      log.trace({ msg: 'closed', id: client.id });
+      events.emit('web:socket:closed', { id: client.id });
     });
   });
 
@@ -78,14 +85,6 @@ module.exports = async (context) => {
     });
     log.trace({ msg: 'broadcast', seenIds, message });
   });
-
-  setInterval(() => {
-    log.trace({ msg: 'ping' });
-    services.call('web:socket:broadcast', {
-      event: 'ping',
-      systemTime: Date.now(),
-    });
-  }, 1000);
 
   const reloadReturned = await reload(app);
 
