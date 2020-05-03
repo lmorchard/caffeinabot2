@@ -1,9 +1,14 @@
 export function connectSocket({
   onConnect = () => {},
   onMessage = () => {},
-  options: { PING_INTERVAL = 1000, RECONNECT_INTERVAL = 3000 } = {},
+  options: {
+    PING_INTERVAL = 1000,
+    RECONNECT_INTERVAL = 3000,
+    MAX_RECONNECTS_BEFORE_RELOAD = 5,
+  } = {},
 }) {
   let socket;
+  let reconnectCount = 0;
   let pingTimer = null;
   let reconnectTimer = null;
 
@@ -29,7 +34,11 @@ export function connectSocket({
   const reconnect = () => {
     if (pingTimer) clearTimeout(pingTimer);
     if (reconnectTimer) clearTimeout(reconnectTimer);
-    connect();
+    if (++reconnectCount > MAX_RECONNECTS_BEFORE_RELOAD) {
+      window.location.reload();
+    } else {
+      connect();
+    }
   };
 
   const connect = () => {
@@ -45,6 +54,7 @@ export function connectSocket({
 
     socket.addEventListener('open', (event) => {
       console.log('connected websocket');
+      reconnectCount = 0;
       schedulePing();
       onConnect({ socket, send });
     });
