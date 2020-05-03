@@ -91,8 +91,10 @@ module.exports = async (context) => {
     webSocketServerWaitStart: true,
   });
 
+  let initComplete = false;
   events.on('init.complete', async () => {
     await reloadReturned.startWebSocketServer();
+    initComplete = true;
   });
 
   services.provide(
@@ -101,7 +103,13 @@ module.exports = async (context) => {
       log.trace({ msg: `serveStatic`, urlpath, filepath });
       app.use(urlpath, express.static(filepath));
       watch.watchTree(filepath, { interval: 1.0 }, (f, curr, prev) => {
-        if (reloadReturned.wss) reloadReturned.reload();
+        if (!initComplete) return;
+        try {
+          log.trace({ msg: 'static file change', f });
+          reloadReturned.reload();
+        } catch (err) {
+          log.error({ msg: 'reload failed', err });
+        }
       });
       if (addToIndex) {
         await services.call('web.server.addToIndex', { urlpath, metadata });
