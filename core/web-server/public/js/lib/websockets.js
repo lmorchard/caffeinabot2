@@ -22,9 +22,15 @@ export function connectSocket({
     if (reconnectTimer) clearTimeout(reconnectTimer);
     reconnectTimer = setTimeout(() => {
       console.log('reconnecting');
-      connect();
+      reconnect();
     }, RECONNECT_INTERVAL);
   }
+
+  const reconnect = () => {
+    if (pingTimer) clearTimeout(pingTimer);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    connect();
+  };
 
   const connect = () => {
     const { protocol, host } = window.location;
@@ -45,8 +51,7 @@ export function connectSocket({
 
     socket.addEventListener('close', (event) => {
       console.log('disconnected websocket');
-      if (pingTimer) clearTimeout(pingTimer);
-      scheduleReconnect();
+      reconnect();
     });
 
     socket.addEventListener('message', (event) => {

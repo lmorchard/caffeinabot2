@@ -49,7 +49,6 @@ module.exports = async (context) => {
   websocketServer.on('connection', (client, request) => {
     client.id = uuid.v4();
     log.info({ msg: `WebSocket connection`, id: client.id });
-    9;
 
     const send = (message) => client.send(JSON.stringify(message));
 
@@ -94,7 +93,6 @@ module.exports = async (context) => {
 
   events.on('init.complete', async () => {
     await reloadReturned.startWebSocketServer();
-    log.debug({ msg: 'reload wss init' });
   });
 
   services.provide(
@@ -103,11 +101,7 @@ module.exports = async (context) => {
       log.trace({ msg: `serveStatic`, urlpath, filepath });
       app.use(urlpath, express.static(filepath));
       watch.watchTree(filepath, { interval: 1.0 }, (f, curr, prev) => {
-        try {
-          reloadReturned.reload();
-        } catch (err) {
-          log.error({ msg: 'reload failed', err });
-        }
+        if (reloadReturned.wss) reloadReturned.reload();
       });
       if (addToIndex) {
         await services.call('web.server.addToIndex', { urlpath, metadata });
