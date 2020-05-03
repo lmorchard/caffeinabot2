@@ -2,12 +2,15 @@ import { connectSocket } from '/js/lib/websockets.js';
 
 async function init() {
   connectSocket({
-    onConnect({ socket, send }) {
-      console.log('CONNECTED');
-    },
     onMessage({ socket, send, event, data }) {
-      console.log("SOCKET", data);
-    }
+      switch (data.type) {
+        case 'following': {
+          const { userId, userDisplayName, followDate } = data.details;
+          console.log('following', userDisplayName);
+          break;
+        }
+      }
+    },
   });
 }
 

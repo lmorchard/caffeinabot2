@@ -1,10 +1,6 @@
 const WebSocket = require('ws');
 const uuid = require('uuid');
  
-const SVC_OBS_REMOTE_SEND = 'obs:remote:send';
-const EV_OBS_REMOTE_MESSAGE = 'obs:remote:message';
-const EV_OBS_REMOTE_HEARTBEAT = 'obs:remote:heartbeat';
-
 const RECONNECT_INTERVAL = 5000;
 
 module.exports = async (context) => {
@@ -15,7 +11,10 @@ module.exports = async (context) => {
     return;
   }
 
-  services.provide(SVC_OBS_REMOTE_SEND, (type, message) => call(type, message));
+  const topicMessage = events.topic('obs.message');
+  const topicHeartbeat = events.topic('obs.heartbeat');
+  
+  services.provide('obs.send', (type, message) => call(type, message));
 
   const pendingRequests = {};
 
@@ -84,11 +83,11 @@ module.exports = async (context) => {
       switch (data['update-type']) {
         case 'Heartbeat': {
           resetReconnectTimer();
-          return events.emit(EV_OBS_REMOTE_HEARTBEAT, data);
+          return topicHeartbeat.emit(data);
         }
       }
       log.debug({ msg: 'message', data });
-      events.emit(EV_OBS_REMOTE_MESSAGE, data);
+      topicMessage.emit(data);
     });
   }
 

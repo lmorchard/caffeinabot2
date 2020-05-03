@@ -48,7 +48,8 @@ module.exports = async (context) => {
 
   websocketServer.on('connection', (client, request) => {
     client.id = uuid.v4();
-    log.info({ msg: `WebSocket connection`, id: client.id });9 
+    log.info({ msg: `WebSocket connection`, id: client.id });
+    9;
 
     const send = (message) => client.send(JSON.stringify(message));
 
@@ -58,16 +59,16 @@ module.exports = async (context) => {
       if (message.type === 'PING') {
         send({ type: 'PONG' });
       }
-      events.emit('web:socket:received', { id: client.id, message });
+      events.emit('web.socket.received', { id: client.id, message });
     });
 
     client.on('close', () => {
       log.trace({ msg: 'closed', id: client.id });
-      events.emit('web:socket:closed', { id: client.id });
+      events.emit('web.socket.closed', { id: client.id });
     });
   });
 
-  services.provide('web:socket:send', (id, message) => {
+  services.provide('web.socket.send', (id, message) => {
     websocketServer.clients.forEach((client) => {
       if (client.id !== id) return;
       if (client.readyState !== WebSocket.OPEN) return;
@@ -76,7 +77,7 @@ module.exports = async (context) => {
     });
   });
 
-  services.provide('web:socket:broadcast', (message) => {
+  services.provide('web.socket.broadcast', (message) => {
     const seenIds = [];
     websocketServer.clients.forEach((client) => {
       if (client.readyState !== WebSocket.OPEN) return;
@@ -86,24 +87,36 @@ module.exports = async (context) => {
     log.trace({ msg: 'broadcast', seenIds, message });
   });
 
-  const reloadReturned = await reload(app);
+  const reloadReturned = await reload(app, {
+    verbose: true,
+    webSocketServerWaitStart: true,
+  });
+
+  events.on('init.complete', async () => {
+    await reloadReturned.startWebSocketServer();
+    log.debug({ msg: 'reload wss init' });
+  });
 
   services.provide(
-    'web:server:serveStatic',
+    'web.server.serveStatic',
     async ({ urlpath, filepath, addToIndex = true, metadata = {} }) => {
       log.trace({ msg: `serveStatic`, urlpath, filepath });
       app.use(urlpath, express.static(filepath));
       watch.watchTree(filepath, { interval: 1.0 }, (f, curr, prev) => {
-        reloadReturned.reload();
+        try {
+          reloadReturned.reload();
+        } catch (err) {
+          log.error({ msg: 'reload failed', err });
+        }
       });
       if (addToIndex) {
-        await services.call('web:server:addToIndex', { urlpath, metadata });
+        await services.call('web.server.addToIndex', { urlpath, metadata });
       }
     }
   );
 
   services.provide(
-    'web:server:addToIndex',
+    'web.server.addToIndex',
     async ({ urlpath, metadata = {} }) => {
       homeLinks[urlpath] = {
         title: metadata.title || urlpath,
@@ -116,7 +129,7 @@ module.exports = async (context) => {
     log.info(`listening at http://${host}:${port}`)
   );
 
-  await services.call('web:server:serveStatic', {
+  await services.call('web.server.serveStatic', {
     urlpath: '/',
     filepath: `${__dirname}/public`,
     addToIndex: false,

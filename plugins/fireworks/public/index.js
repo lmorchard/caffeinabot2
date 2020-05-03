@@ -6,9 +6,6 @@ async function init() {
     fireworks.loop();
   };
   connectSocket({
-    onConnect({ socket, send }) {
-      console.log('CONNECTED');
-    },
     onMessage({ socket, send, event, data }) {
       switch (data.type) {
         case 'fireworks': {

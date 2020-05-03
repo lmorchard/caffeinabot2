@@ -4,6 +4,8 @@ module.exports = async (context) => {
   const { config, events, log, services } = context;
   const { channels, username, password } = config.twitch.chat;
 
+  const topicMessage = events.topic('twitch.chat.message');
+
   const logger = {
     setLevel: () => {},
     ...['trace', 'debug', 'info', 'warn', 'error', 'fatal'].reduce(
@@ -26,12 +28,12 @@ module.exports = async (context) => {
     channels: channels.split(','),
   });
 
-  services.provide('twitch:chat:say', (channel, message) =>
+  services.provide('twitch.chat.say', (channel, message) =>
     client.say(channel, message)
   );
 
   client.on('message', (channel, tags, message, self) => {
-    events.emit('twitch:chat:message', {
+    topicMessage.emit({
       channel,
       tags,
       message,

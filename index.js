@@ -1,16 +1,17 @@
 const config = require('./lib/config');
 const log = require('pino')(config.log);
-const { createNanoEvents } = require('./lib/events');
-const { createServiceHub } = require('./lib/services');
+const createTopicsManager = require('./lib/topics');
+const createServiceHub = require('./lib/services');
 const { initPluginModules } = require('./lib/plugins');
 
 async function init() {
   const context = {
     log,
     config,
-    events: createNanoEvents(),
+    events: createTopicsManager(),
     services: createServiceHub(),
   };
+  rewireConsoleLog(context);
   rewireTwitchClientLogging(context);
   await initPluginModules(context, [
     'core/web-server',
@@ -24,8 +25,17 @@ async function init() {
     'plugins/youtube-playlist-shuffle',
     'plugins/fireworks',
     'plugins/alerts-overlay',
-    // 'plugins/debug',
+    'plugins/debug',
   ]);
+  context.events.emit('init.complete');
+}
+
+function rewireConsoleLog(context) {
+  const log = context.log.child({ name: 'console' });
+  console.log = (msg) => log.debug({ msg });
+  ['info', 'trace', 'debug', 'warn', 'error'].forEach(
+    (name) => (console[name] = (msg) => log[name]({ msg }))
+  );
 }
 
 function rewireTwitchClientLogging(context) {
@@ -42,7 +52,7 @@ function rewireTwitchClientLogging(context) {
     [LogLevel.DEBUG3]: log.debug.bind(log),
     [LogLevel.TRACE]: log.trace.bind(log),
   };
-  NodeLogger.prototype.log = (level, msg) => {    
+  NodeLogger.prototype.log = (level, msg) => {
     const logFn = logLevelToPinoFunction[level] || log.debug.bind(log);
     logFn({ msg });
   };

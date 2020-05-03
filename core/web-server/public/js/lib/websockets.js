@@ -1,7 +1,7 @@
 export function connectSocket({
   onConnect = () => {},
   onMessage = () => {},
-  options: { PING_INTERVAL = 2000, RECONNECT_INTERVAL = 5000 } = {},
+  options: { PING_INTERVAL = 1000, RECONNECT_INTERVAL = 3000 } = {},
 }) {
   let socket;
   let pingTimer = null;
@@ -14,8 +14,12 @@ export function connectSocket({
 
   function schedulePing() {
     if (pingTimer) clearTimeout(pingTimer);
-    if (reconnectTimer) clearTimeout(reconnectTimer);
     pingTimer = setTimeout(() => send({ type: 'PING' }), PING_INTERVAL);
+    scheduleReconnect();
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer) clearTimeout(reconnectTimer);
     reconnectTimer = setTimeout(() => {
       console.log('reconnecting');
       connect();
@@ -27,9 +31,11 @@ export function connectSocket({
     const wsUrl = `${protocol === 'https:' ? 'wss' : 'ws'}://${host}/`;
 
     console.log(`connecting websocket to ${wsUrl}`);
-    schedulePing();
-
+    if (socket) {
+      socket.close();
+    }
     socket = new WebSocket(wsUrl);
+    scheduleReconnect();
 
     socket.addEventListener('open', (event) => {
       console.log('connected websocket');
@@ -39,7 +45,8 @@ export function connectSocket({
 
     socket.addEventListener('close', (event) => {
       console.log('disconnected websocket');
-      setTimeout(connect, RECONNECT_INTERVAL);
+      if (pingTimer) clearTimeout(pingTimer);
+      scheduleReconnect();
     });
 
     socket.addEventListener('message', (event) => {

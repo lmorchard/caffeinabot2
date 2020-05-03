@@ -4,7 +4,8 @@ const {
 } = require('../../lib/twitch');
 const WebHookListener = require('twitch-webhooks').default;
 
-const EV_TWITCH_WEBHOOKS_PREFIX = 'twitch:webhooks:';
+const TOPIC_TWITCH_WEBHOOKS_PREFIX = 'twitch.webhooks';
+const topicName = (name) => `${TOPIC_TWITCH_WEBHOOKS_PREFIX}.${name}`;
 
 module.exports = async (context) => {
   const { config, events, log, services } = context;
@@ -41,29 +42,18 @@ module.exports = async (context) => {
   });
   listener.listen();
 
-  const followHandler = async (message) => {
-    try {
-      const {
-        id,
-        name,
-        displayName,
-        description,
-        type,
-        profilePictureUrl,
-      } = await message.getUser();
-      log.debug({
-        msg: 'followplz2',
-        date: message.followDate,
-        id,
-        name,
-        displayName,
-        description,
-        type,
-        profilePictureUrl,
-      });
-    } catch (err) {
-      log.error({ msg: 'failed?', err });
-    }
-  };
-  listener.subscribeToFollowsToUser(userId, followHandler);
+  const topicFollowing = events.topic(topicName('following'));
+  listener.subscribeToFollowsToUser(
+    userId,
+    ({
+      userId,
+      userDisplayName,
+      followDate,
+    }) =>
+      topicFollowing.emit({
+        userId,
+        userDisplayName,
+        followDate,
+      })
+  );
 };
