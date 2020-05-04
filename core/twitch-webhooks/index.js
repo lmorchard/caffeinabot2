@@ -39,7 +39,7 @@ module.exports = async (context) => {
   });
   listener.listen();
 
-  const topicName = (name) => `twitch.webhooks.${name}`;
+  const topicName = (name) => `twitch.${name}`;
   
   const topicStream = events.topic(topicName('stream'));
   listener.subscribeToStreamChanges(userId, ({ _data }) =>

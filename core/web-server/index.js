@@ -112,18 +112,24 @@ module.exports = async (context) => {
         }
       });
       if (addToIndex) {
-        await services.call('web.server.addToIndex', { urlpath, metadata });
+        await services.call('web.server.addToIndex', {
+          urlpath,
+          metadata,
+          replace: false,
+        });
       }
     }
   );
 
   services.provide(
     'web.server.addToIndex',
-    async ({ urlpath, metadata = {} }) => {
-      homeLinks[urlpath] = {
-        title: metadata.title || urlpath,
-        urlpath,
-      };
+    async ({ urlpath, metadata = {}, replace = true }) => {
+      if (replace || !homeLinks[urlpath]) {
+        homeLinks[urlpath] = {
+          title: metadata.title || urlpath,
+          urlpath,
+        };
+      }
     }
   );
 
