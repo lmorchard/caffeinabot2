@@ -12,7 +12,7 @@ const {
 
 module.exports = async (context) => {
   const { app, log, config, moduleName, services } = context;
-  const { host, port } = config.web;
+  const { hostname, host, port } = config.web;
   const { clientId, clientSecret } = config.twitch.api;
 
   const urlpath = `/${moduleName}`;
@@ -29,13 +29,15 @@ module.exports = async (context) => {
     }
     let appToken = {};
     let userToken = {};
+    let chatBotToken = {};
     try {
       appToken = await loadTwitchAppCredentials(context);
       userToken = await loadTwitchUserCredentials(context);
+      chatBotToken = await loadTwitchUserCredentials(context, true);
     } catch (err) {
       // no-op
     }
-    res.send(htmlIndex({ appToken, userToken }));
+    res.send(htmlIndex({ appToken, userToken, chatBotToken }));
   });
 
   router.post('/', async (req, res) => {
@@ -50,31 +52,35 @@ module.exports = async (context) => {
 
   const handleCodeRedirect = async (req, res, code) => {
     try {
-      const tokenResp = await fetch(userTokenUrl({ code }), { method: 'POST' });
+      const chatbot = req.query.state === 'chatbot';
+      const tokenResp = await fetch(userTokenUrl({ code, chatbot }), {
+        method: 'POST',
+      });
       if (!tokenResp.ok) {
         return res.send(htmlError(await tokenResp.text()));
       }
       const tokenData = await tokenResp.json();
-      await updateTwitchUserCredentials(context, tokenData);
+      await updateTwitchUserCredentials(context, tokenData, chatbot);
       return res.redirect(urlpath);
     } catch (err) {
       return res.send(htmlError(err));
     }
   };
 
-  const redirectUri = () => `http://${host}:${port}/${moduleName}/`;
+  const redirectUri = () => `http://${hostname}:${port}/${moduleName}/`;
 
-  const authorizeUserUrl = () => {
+  const authorizeUserUrl = ({ chatbot = false } = {}) => {
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri(),
       response_type: 'code',
       scope: TWITCH_SCOPES.join(' '),
+      state: chatbot ? 'chatbot' : 'user',
     });
     return `https://id.twitch.tv/oauth2/authorize?${params.toString()}`;
   };
 
-  const userTokenUrl = ({ code }) => {
+  const userTokenUrl = ({ code, chatbot = false }) => {
     const params = new URLSearchParams({
       code,
       client_id: clientId,
@@ -95,7 +101,7 @@ module.exports = async (context) => {
     return `https://id.twitch.tv/oauth2/token?${params.toString()}`;
   };
 
-  const htmlIndex = ({ appToken, userToken }) =>
+  const htmlIndex = ({ appToken, userToken, chatBotToken }) =>
     htmlPage(html`
       <h1>twitch-auth</h1>
 
@@ -113,6 +119,12 @@ module.exports = async (context) => {
         <p>Expires in: ${userToken.expires_in}</p>
         <a href="${authorizeUserUrl()}">Authorize user</a>
       </section>
+
+      <section>
+        <h2>Chatbot Access Token</h2>
+        <p>Expires in: ${chatBotToken.expires_in}</p>
+        <a href="${authorizeUserUrl({ chatbot: true })}">Authorize user</a>
+      </section>
     `);
 
   const htmlError = (error) =>
@@ -123,7 +135,7 @@ module.exports = async (context) => {
     `);
 
   app.use(urlpath, router);
-  services.call('web:server:addToIndex', {
+  services.call('web.server.addToIndex', {
     urlpath,
     metadata: { title: 'Twitch Auth' },
   });

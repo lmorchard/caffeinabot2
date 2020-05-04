@@ -1,45 +1,36 @@
+const { createTwitchUserClient } = require('../../lib/twitch');
+const ChatClient = require('twitch-chat-client').default;
+const LogLevel = require('@d-fischer/logger/lib/LogLevel').default;
+
 const tmi = require('tmi.js');
 
 module.exports = async (context) => {
   const { config, events, log, services } = context;
-  const { channels, username, password } = config.twitch.chat;
+
+  const twitchOwnerClient = await createTwitchUserClient(context);
+  const { userName: ownerUserName } = await twitchOwnerClient.getTokenInfo();
+
+  const twitchChatClient = await createTwitchUserClient(context, true);
+  const { userId, userName } = await twitchChatClient.getTokenInfo();
+  const chatClient = await ChatClient.forTwitchClient(twitchChatClient, {
+    channels: [ownerUserName],
+    requestMembershipEvents: true,
+  });
+  await chatClient.connect();
+
+  services.provide('twitch.chat.say', (channel, message) => {
+    chatClient.say(channel, message);
+  });
 
   const topicMessage = events.topic('twitch.chat.message');
-
-  const logger = {
-    setLevel: () => {},
-    ...['trace', 'debug', 'info', 'warn', 'error', 'fatal'].reduce(
-      (acc, level) => ({ ...acc, [level]: (msg) => log[level]({ msg }) }),
-      {}
-    ),
-  };
-
-  const client = new tmi.Client({
-    logger,
-    options: { debug: true },
-    connection: {
-      reconnect: true,
-      secure: true,
-    },
-    identity: {
-      username,
-      password,
-    },
-    channels: channels.split(','),
-  });
-
-  services.provide('twitch.chat.say', (channel, message) =>
-    client.say(channel, message)
-  );
-
-  client.on('message', (channel, tags, message, self) => {
+  chatClient.onPrivmsg((channel, user, message, meta) => {
+    const self = meta.userInfo.userId === userId;
     topicMessage.emit({
       channel,
-      tags,
+      user,
       message,
       self,
+      meta,
     });
   });
-
-  client.connect();
 };

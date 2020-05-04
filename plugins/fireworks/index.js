@@ -6,12 +6,12 @@ module.exports = async (context) => {
   const topicMessage = events.topic('twitch.chat.message');
 
   const chatCommands = {
-    fireworks: ({ args, channel, tags }) => {
+    fireworks: ({ args, channel, meta }) => {
       const [number = 1, spread = 30] = args;
       services.call(
         'twitch.chat.say',
         channel,
-        `@${tags.username}, let there be light`
+        `@${meta.userInfo.userName}, let there be light`
       );
       services.call('web.socket.broadcast', {
         type: 'fireworks',
@@ -21,7 +21,8 @@ module.exports = async (context) => {
     },
   };
 
-  topicMessage.on(async (eventData) =>
+  topicMessage.on(async (eventData) => {
+    log.debug({ msg: 'gotchat', eventData });
     dispatchChatCommand(eventData, chatCommands)
-  );
+  });
 };

@@ -1,6 +1,5 @@
-const PubSubClient = require('../../../twitch/packages/twitch-pubsub-client').default;
-// const PubSubClient = require('twitch-pubsub-client').default;
 const { createTwitchUserClient } = require('../../lib/twitch');
+const PubSubClient = require('twitch-pubsub-client').default;
 
 module.exports = async (context) => {
   const { config, events, log, services } = context;
@@ -13,9 +12,5 @@ module.exports = async (context) => {
 
   await pubSubClient.onRedemption(userId, message => {
     log.debug({ msg: 'redemption', message });
-  });
-
-  await pubSubClient.onFollowing(userId, message => {
-    log.debug({ msg: 'following', ...message._data });
   });
 };

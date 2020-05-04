@@ -4,9 +4,6 @@ const {
 } = require('../../lib/twitch');
 const WebHookListener = require('twitch-webhooks').default;
 
-const TOPIC_TWITCH_WEBHOOKS_PREFIX = 'twitch.webhooks';
-const topicName = (name) => `${TOPIC_TWITCH_WEBHOOKS_PREFIX}.${name}`;
-
 module.exports = async (context) => {
   const { config, events, log, services } = context;
   const {
@@ -42,18 +39,15 @@ module.exports = async (context) => {
   });
   listener.listen();
 
+  const topicName = (name) => `twitch.webhooks.${name}`;
+  
+  const topicStream = events.topic(topicName('stream'));
+  listener.subscribeToStreamChanges(userId, ({ _data }) =>
+    topicStream.emit(_data)
+  );
+
   const topicFollowing = events.topic(topicName('following'));
-  listener.subscribeToFollowsToUser(
-    userId,
-    ({
-      userId,
-      userDisplayName,
-      followDate,
-    }) =>
-      topicFollowing.emit({
-        userId,
-        userDisplayName,
-        followDate,
-      })
+  listener.subscribeToFollowsToUser(userId, ({ _data }) =>
+    topicFollowing.emit(_data)
   );
 };
