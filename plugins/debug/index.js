@@ -52,7 +52,6 @@ module.exports = async (context) => {
         break;
       }
       case 'simulateFollowing': {
-        log.debug({ msg: 'SIMULATE FOLLOW RECEIVED' });
         events.emit('twitch.following', {
           userId: '8675309',
           userDisplayName: 'J Random Hacker',

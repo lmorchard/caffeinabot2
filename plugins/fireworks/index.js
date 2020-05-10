@@ -22,7 +22,6 @@ module.exports = async (context) => {
   };
 
   topicMessage.on(async (eventData) => {
-    log.debug({ msg: 'gotchat', eventData });
     dispatchChatCommand(eventData, chatCommands)
   });
 };
