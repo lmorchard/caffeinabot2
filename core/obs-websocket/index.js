@@ -86,7 +86,7 @@ module.exports = async (context) => {
           return topicHeartbeat.emit(data);
         }
       }
-      log.debug({ msg: 'message', data });
+      log.trace({ msg: 'message', data });
       topicMessage.emit(data);
     });
   }

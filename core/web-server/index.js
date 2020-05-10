@@ -10,6 +10,9 @@ module.exports = async (context) => {
   const { config, log, events, services } = context;
   const { host, port } = config.web;
 
+  const topicReceived = events.topic('web.socket.received');
+  const topicClosed = events.topic('web.socket.closed');
+
   const app = express();
 
   app.use(require('pino-http')({ logger: log }));
@@ -58,12 +61,12 @@ module.exports = async (context) => {
       if (message.type === 'PING') {
         send({ type: 'PONG' });
       }
-      events.emit('web.socket.received', { id: client.id, message });
+      topicReceived.emit({ id: client.id, message });
     });
 
     client.on('close', () => {
       log.trace({ msg: 'closed', id: client.id });
-      events.emit('web.socket.closed', { id: client.id });
+      topicClosed.emit({ id: client.id });
     });
   });
 
