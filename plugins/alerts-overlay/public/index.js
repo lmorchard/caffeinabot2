@@ -7,7 +7,7 @@ async function init() {
     onMessage({ socket, send, event, data }) {
       switch (data.type) {
         case 'following': {
-          const { userId, userDisplayName, followDate } = data.detail;
+          const { userId, userDisplayName } = data;
           const alertFollowing = $('#alert-following');
           $('#alert-following .display-name').innerText = userDisplayName;
           alertFollowing.classList.add('show');

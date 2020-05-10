@@ -1,12 +1,17 @@
 import { connectSocket } from '/js/lib/websockets.js';
-
-const $ = (...args) => document.body.querySelector(...args);
+import { $, $$ } from '/js/lib/dom.js';
 
 async function init() {
   connectSocket({ 
     onConnect({ send, socket }) {
-      const simulateFollowButton = document.body.querySelector('#simulate-follow');
-      simulateFollowButton.addEventListener('click', ev => {
+      $$('sam-say').addEventListener('click', ev => {
+        send({
+          type: 'testSamSay',
+          text: 'Hello world, this is not Amiga speaking. It is me, SAM!',
+        });
+      });
+
+      $$('simulate-follow').addEventListener('click', ev => {
         console.log("SIMULATE FOLLOWING CLICKED");
         send({
           type: 'simulateFollowing',

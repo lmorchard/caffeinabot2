@@ -25,6 +25,7 @@ async function init() {
     'plugins/youtube-playlist-shuffle',
     'plugins/fireworks',
     'plugins/alerts-overlay',
+    'plugins/sam',
     'plugins/debug',
   ]);
   context.events.emit('init.complete');

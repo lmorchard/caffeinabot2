@@ -3,7 +3,7 @@ const { html, htmlPage } = require('../../lib/html');
 
 module.exports = async (context) => {
   const { config, moduleName, app, log, events, services } = context;
-  const urlpath = `/${moduleName}`;
+  const urlpath = `/${moduleName}/`;
 
   const router = express.Router();
 
@@ -23,6 +23,7 @@ module.exports = async (context) => {
           <h2>Debug message</h2>
           <p>
             <button id="simulate-follow">Simulate Follow Event</button>
+            <button id="sam-say">SAM say hello</button>
           </p>
           <h2>Topics</h2>
           <ul>
@@ -44,16 +45,20 @@ module.exports = async (context) => {
 
   topicWebsocketReceived.on(({ id, message }) => {
     switch (message.type) {
+      case 'testSamSay': {
+        services.call('sam.say', {
+          text: message.text,
+        });
+        break;
+      }
       case 'simulateFollowing': {
         log.debug({ msg: 'SIMULATE FOLLOW RECEIVED' });
-        services.call('web.socket.broadcast', {
-          type: 'following',
-          detail: {
-            userId: '8675309',
-            userDisplayName: 'J Random Hacker',
-            followDate: (new Date()).toISOString(),             
-          }
+        events.emit('twitch.following', {
+          userId: '8675309',
+          userDisplayName: 'J Random Hacker',
+          followDate: new Date().toISOString(),
         });
+        break;
       }
     }
   });
