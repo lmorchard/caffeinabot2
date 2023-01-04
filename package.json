@@ -39,7 +39,7 @@
     "twitch-webhooks": "^4.0.9",
     "uuid": "^7.0.3",
     "watch": "^1.0.2",
-    "ws": "^7.2.3"
+    "ws": "^7.4.6"
   },
   "devDependencies": {
     "pino-pretty-min": "^0.2.1",
